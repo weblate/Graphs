@@ -18,6 +18,7 @@ slots:
 
 parts:
   matplotlib:
+    plugin: python
     source: https://github.com/matplotlib/matplotlib.git
     source-tag: 'v3.7.1'
     build-environment:
