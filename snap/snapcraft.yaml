@@ -7,7 +7,7 @@ compression: lzo
 license: GPL-3.0
 architectures:
   - build-on: amd64
-  - build-on: arm64
+  #- build-on: arm64
 
 
 slots:
@@ -17,6 +17,33 @@ slots:
     name: se.sjoerd.Graphs
 
 parts:
+  matplotlib:
+    source: https://github.com/matplotlib/matplotlib.git
+    source-tag: 'v3.7.1'
+    build-environment:
+      # WORKAROUND: The python plugin is broken with gnome extension
+      - PATH: ${CRAFT_PART_INSTALL}/bin:${PATH}
+      - PYTHONPATH: ""
+    python-packages:
+      - cycler==0.11.0
+      - fonttools==4.39.4
+      - kiwisolver==1.4.4
+      - contourpy==1.0.7
+      - packaging==23.1
+      - Pillow==9.5.0
+      - pyparsing==3.0.9
+      - scipy==1.10.1
+      - numpy==1.24.3
+      - python_dateutil==2.8.2
+    prime:
+      - -usr/bin/activate*
+      - -usr/bin/Activate.ps1
+      - -usr/bin/python*
+      - -usr/bin/pip*
+      - -pyvenv.cfg
+    organize:
+      bin: usr/bin
+      lib/python3.10/site-packages: usr/lib/python3.10/dist-packages
   blueprint-compiler:
     source: https://gitlab.gnome.org/jwestman/blueprint-compiler.git
     source-tag: 'v0.8.1'
@@ -42,18 +69,14 @@ parts:
       patch -p1 < $CRAFT_PROJECT_DIR/snap/graphs.patch
     override-build: |
       craftctl default
-      pip install --prefix=$CRAFT_PART_INSTALL/usr matplotlib==3.7.1
-      pip install --prefix=$CRAFT_PART_INSTALL/usr scipy==1.10.1
       sed -e '1c#!/usr/bin/env python3' -i ${CRAFT_PART_INSTALL}/snap/graphs/current/usr/bin/graphs
-      sed -e '1c#!/usr/bin/python3' -i $CRAFT_PART_INSTALL/usr/local/bin/*
       mkdir -p $CRAFT_PART_INSTALL/meta/gui
       cp -r $CRAFT_PART_INSTALL/snap/graphs/current/usr/share/icons $CRAFT_PART_INSTALL/meta/gui/
       for i in `find $CRAFT_PART_INSTALL/meta/gui/icons -name "*.svg" -o -name "*.png"`; do
         mv $i "`dirname $i`/snap.$CRAFT_PROJECT_NAME.`basename $i`"
       done
     organize:
-      snap/graphs/current/usr: usr
-      usr/local: usr
+      snap/graphs/current: .
       usr/lib/python3: usr/lib/python3.10
     parse-info: [usr/share/appdata/se.sjoerd.Graphs.appdata.xml]
     prime:
