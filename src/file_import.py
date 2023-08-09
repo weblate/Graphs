@@ -79,6 +79,7 @@ class ImportWindow(Adw.Window):
     columns_column_x = Gtk.Template.Child()
     columns_column_y = Gtk.Template.Child()
     columns_skip_rows = Gtk.Template.Child()
+    toast_overlay = Gtk.Template.Child()
 
     modes = GObject.Property(type=object)
     import_dict = GObject.Property(type=object)
@@ -111,24 +112,25 @@ class ImportWindow(Adw.Window):
 
     @Gtk.Template.Callback()
     def on_reset(self, _widget):
-        def on_accept(_dialog, response):
-            if response == "reset":
-                self.reset_import()
-        body = _("Are you sure you want to reset the import settings?")
-        dialog = ui.build_dialog("reset_to_defaults")
-        dialog.set_body(body)
-        dialog.set_transient_for(self)
-        dialog.connect("response", on_accept)
-        dialog.present()
+        current_params = self.get_current_params()
 
-    def reset_import(self):
         template_import_file = Gio.File.new_for_uri(
             "resource:///se/sjoerd/Graphs/import.json")
         import_params_template = file_io.parse_json(template_import_file)
         self.set_values(import_params_template)
 
-    @Gtk.Template.Callback()
-    def on_accept(self, _widget):
+        toast = Adw.Toast.new("Import settings have been reset to defaults")
+        toast.set_button_label("Undo")
+        action = Gio.SimpleAction.new("undo", None)
+        action.connect("activate", self.undo, current_params)
+        toast.set_action_name("app.undo")
+        self.props.application.add_action(action)
+        self.toast_overlay.add_toast(toast)
+
+    def undo(self, action, shortcut, current_params):
+        self.set_values(current_params)
+
+    def get_current_params(self):
         param_dict = {
             mode: {
                 key.replace(f"{mode}_", ""): value for key, value
@@ -139,6 +141,11 @@ class ImportWindow(Adw.Window):
             in self.props.application.preferences["import_params"].items()
             if mode in self.modes
         }
+        return param_dict
+
+    @Gtk.Template.Callback()
+    def on_accept(self, _widget):
+        param_dict = self.get_current_params()
 
         # Remember settings
         self.props.application.preferences.update_modes(param_dict)

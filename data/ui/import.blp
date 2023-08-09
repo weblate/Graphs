@@ -14,8 +14,8 @@ template $ImportWindow : Adw.Window {
       action: "action(window.close)";
     }
   }
-
-  Box {
+      Adw.ToastOverlay toast_overlay {
+        child: Box {
     orientation: vertical;
     Adw.HeaderBar {
       show-end-title-buttons: false;
@@ -105,7 +105,8 @@ template $ImportWindow : Adw.Window {
             }
           }
         }
+        }
       }
-    }
+    };
   }
 }
